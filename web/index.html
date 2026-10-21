@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FFF7EF">
+<title>音乐小屋 · 试听版</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    min-height:100vh;
+    font-family:system-ui,-apple-system,"PingFang SC","Noto Sans SC",sans-serif;
+    color:#3d3a36;
+    background:linear-gradient(165deg,#FFF8F0 0%,#FDF1E7 38%,#EDF5FB 100%);
+    background-attachment:fixed;
+    padding-bottom:calc(150px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:26px 18px 0}
+
+  /* 顶部 */
+  .head{text-align:center;margin-bottom:22px}
+  .brand{
+    font-size:12px;letter-spacing:.32em;color:#b9a894;
+    text-transform:none;margin-bottom:10px
+  }
+  h1{
+    margin:0;font-size:27px;font-weight:600;letter-spacing:.08em;
+    color:#5a4c3f
+  }
+  h1 .dot{color:#e8a87c}
+  .sub{margin-top:9px;font-size:13px;color:#a99c8d;letter-spacing:.1em}
+
+  /* 搜索 */
+  .search{
+    display:flex;gap:10px;margin:22px 0 14px;
+  }
+  .search input{
+    flex:1;min-width:0;height:48px;padding:0 18px;
+    font-size:15px;color:#4a423a;
+    border:1px solid #f2e2d2;border-radius:26px;
+    background:rgba(255,255,255,.86);
+    box-shadow:0 3px 14px rgba(200,170,140,.13);
+    outline:none;transition:.22s;
+  }
+  .search input::placeholder{color:#c2b6a8}
+  .search input:focus{border-color:#f3c9a6;box-shadow:0 4px 18px rgba(232,168,124,.22)}
+  .search button{
+    width:48px;height:48px;flex:0 0 48px;border:none;border-radius:50%;
+    background:linear-gradient(145deg,#f8c79b,#eda173);color:#fff;
+    font-size:17px;cursor:pointer;
+    box-shadow:0 4px 14px rgba(232,168,124,.36);
+    transition:.18s;
+  }
+  .search button:active{transform:scale(.93)}
+
+  /* 热门词 */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .chip{
+    padding:7px 14px;font-size:12.5px;color:#9c8b7a;
+    background:rgba(255,255,255,.7);border:1px solid #f4e6d8;
+    border-radius:16px;cursor:pointer;transition:.18s;
+  }
+  .chip:active{background:#fdf0e3}
+
+  /* 列表 */
+  .list{display:flex;flex-direction:column;gap:8px}
+  .item{
+    display:flex;align-items:center;gap:12px;
+    padding:9px 12px 9px 9px;
+    background:rgba(255,255,255,.78);
+    border:1px solid rgba(242,226,210,.9);
+    border-radius:16px;cursor:pointer;
+    transition:.18s;
+  }
+  .item:active{background:#fff6ec;transform:scale(.985)}
+  .item.on{background:#fff4e8;border-color:#f3c9a6;box-shadow:0 3px 14px rgba(232,168,124,.18)}
+  .cov{
+    width:46px;height:46px;flex:0 0 46px;border-radius:11px;
+    object-fit:cover;background:#f2ece6;
+  }
+  .meta{flex:1;min-width:0}
+  .nm{
+    font-size:14.5px;font-weight:500;color:#4a4239;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .item.on .nm{color:#c1793f}
+  .ar{
+    margin-top:4px;font-size:11.5px;color:#a89a8c;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .dur{font-size:11px;color:#c1b4a6;flex:0 0 auto;font-variant-numeric:tabular-nums}
+
+  /* 状态 */
+  .hint{
+    text-align:center;padding:38px 10px;color:#b6a897;font-size:13px;line-height:1.9;
+  }
+  .hint .ic{font-size:26px;display:block;margin-bottom:10px;opacity:.7}
+  .spin{
+    width:22px;height:22px;margin:0 auto 12px;
+    border:2px solid #f0e0d0;border-top-color:#eda173;border-radius:50%;
+    animation:sp .8s linear infinite;
+  }
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* 播放条 */
+  .player{
+    position:fixed;left:0;right:0;bottom:0;
+    padding:11px 16px calc(12px + env(safe-area-inset-bottom));
+    background:rgba(255,252,247,.94);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border-top:1px solid rgba(240,224,208,.9);
+    box-shadow:0 -6px 26px rgba(190,160,130,.13);
+    transform:translateY(115%);transition:transform .32s cubic-bezier(.3,.8,.3,1);
+    z-index:9;
+  }
+  .player.up{transform:translateY(0)}
+  .prow{display:flex;align-items:center;gap:12px;max-width:560px;margin:0 auto}
+  .pcov{
+    width:44px;height:44px;flex:0 0 44px;border-radius:11px;object-fit:cover;
+    background:#f2ece6;box-shadow:0 2px 8px rgba(190,160,130,.2);
+  }
+  .pmeta{flex:1;min-width:0}
+  .pnm{font-size:13.5px;font-weight:500;color:#4a4239;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .par{margin-top:3px;font-size:11px;color:#a89a8c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .btns{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+  .btn{
+    width:34px;height:34px;border:none;background:transparent;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:#8b7a68;border-radius:50%;transition:.16s;
+  }
+  .btn:active{background:#f6ece1}
+  .btn svg{width:19px;height:19px;fill:currentColor}
+  .btn.main{
+    width:42px;height:42px;
+    background:linear-gradient(145deg,#f8c79b,#eda173);
+    color:#fff;box-shadow:0 3px 12px rgba(232,168,124,.4);
+  }
+  .btn.main svg{width:18px;height:18px}
+
+  /* 进度 */
+  .prog{max-width:560px;margin:9px auto 0}
+  .track{
+    position:relative;height:20px;display:flex;align-items:center;cursor:pointer;
+  }
+  .track .bg{position:absolute;left:0;right:0;height:3px;border-radius:2px;background:#f0e3d6}
+  .track .fg{position:absolute;left:0;height:3px;border-radius:2px;background:#e8a87c;width:0}
+  .track .knob{
+    position:absolute;width:9px;height:9px;border-radius:50%;background:#eda173;
+    left:0;transform:translateX(-50%);box-shadow:0 1px 4px rgba(232,168,124,.6);
+    opacity:0;transition:opacity .2s;
+  }
+  .track:hover .knob{opacity:1}
+  .times{display:flex;justify-content:space-between;font-size:10.5px;color:#b9ab9c;margin-top:-2px;font-variant-numeric:tabular-nums}
+
+  /* toast */
+  .toast{
+    position:fixed;left:50%;bottom:180px;transform:translate(-50%,14px);
+    padding:10px 18px;border-radius:20px;font-size:12.5px;color:#7a6a5a;
+    background:rgba(255,250,244,.97);border:1px solid #f2e2d2;
+    box-shadow:0 6px 22px rgba(190,160,130,.24);
+    opacity:0;pointer-events:none;transition:.28s;z-index:20;max-width:80vw;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="brand">聆遇游乐园</div>
+    <h1>音乐小屋<span class="dot">·</span>试听</h1>
+    <div class="sub">搜一首，听一听</div>
+  </div>
+
+  <div class="search">
+    <input id="kw" type="search" placeholder="歌名或歌手" autocomplete="off" enterkeyhint="search">
+    <button id="go" aria-label="搜索">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+    </button>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <div id="area">
+    <div class="hint">
+      <span class="ic">♪</span>
+      输入歌名或歌手，<br>或者点上面一个词试试
+    </div>
+  </div>
+</div>
+
+<!-- 播放条 -->
+<div class="player" id="player">
+  <div class="prow">
+    <img class="pcov" id="pcov" alt="">
+    <div class="pmeta">
+      <div class="pnm" id="pnm">—</div>
+      <div class="par" id="par"></div>
+    </div>
+    <div class="btns">
+      <button class="btn" id="prev" aria-label="上一首">
+        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+      </button>
+      <button class="btn main" id="play" aria-label="播放/暂停">
+        <svg id="pIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="btn" id="next" aria-label="下一首">
+        <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="prog">
+    <div class="track" id="track">
+      <div class="bg"></div><div class="fg" id="fg"></div><div class="knob" id="knob"></div>
+    </div>
+    <div class="times"><span id="cur">0:00</span><span id="tot">0:00</span></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<audio id="audio" preload="none" crossorigin="anonymous"></audio>
+
+<script>
+const $ = s => document.querySelector(s)
+const audio = $('#audio')
+let songs = [], cur = -1, playing = false, loadingSong = false
+const HOT = ['周杰伦','五月天','陈奕迅','坂本龙一','久石让','房东的猫']
+
+// ---------- 工具 ----------
+function fmt(ms){
+  if(!ms || ms < 0) return '0:00'
+  const s = Math.floor(ms/1000)
+  return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0')
+}
+let toastTimer = null
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600)
+}
+
+// ---------- 热门词 ----------
+$('#chips').innerHTML = HOT.map(k => `<span class="chip">${k}</span>`).join('')
+$('#chips').addEventListener('click', e => {
+  if(!e.target.classList.contains('chip')) return
+  $('#kw').value = e.target.textContent
+  search()
+})
+
+// ---------- 搜索 ----------
+async function search(){
+  const kw = $('#kw').value.trim()
+  if(!kw){ toast('先输入歌名或歌手吧'); return }
+  $('#area').innerHTML = '<div class="hint"><div class="spin"></div>正在找…</div>'
+  try{
+    const r = await fetch('/api/search?kw=' + encodeURIComponent(kw) + '&limit=30').then(r => r.json())
+    if(!r.ok){ $('#area').innerHTML = `<div class="hint"><span class="ic">☁</span>${r.msg || '没搜到'}</div>`; return }
+    if(!r.songs.length){ $('#area').innerHTML = '<div class="hint"><span class="ic">☁</span>什么都没找到，换个词试试？</div>'; return }
+    songs = r.songs
+    render()
+  }catch(e){
+    $('#area').innerHTML = '<div class="hint"><span class="ic">⚡</span>连不上服务，看看后台还在不在</div>'
+  }
+}
+
+function render(){
+  const box = document.createElement('div')
+  box.className = 'list'
+  songs.forEach((s,i) => {
+    const el = document.createElement('div')
+    el.className = 'item' + (i === cur ? ' on' : '')
+    el.innerHTML = `
+      <img class="cov" src="${s.cover || ''}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      <div class="meta">
+        <div class="nm">${esc(s.name)}</div>
+        <div class="ar">${esc(s.artist)}${s.album ? ' · ' + esc(s.album) : ''}</div>
+      </div>
+      <div class="dur">${s.duration ? fmt(s.duration) : ''}</div>`
+    el.addEventListener('click', () => play(i))
+    box.appendChild(el)
+  })
+  $('#area').innerHTML = ''
+  $('#area').appendChild(box)
+  window.scrollTo({top:0,behavior:'smooth'})
+}
+
+function esc(s){
+  return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'"'}[c]))
+}
+
+// ---------- 播放 ----------
+async function play(i){
+  if(loadingSong || i < 0 || i >= songs.length) return
+  const s = songs[i]
+  cur = i; loadingSong = true
+  markCurrent()
+  $('#player').classList.add('up')
+  $('#pcov').src = s.cover || ''
+  $('#pnm').textContent = s.name
+  $('#par').textContent = s.artist
+  setProgress(0, 0)
+  toast('正在准备…')
+
+  try{
+    const r = await fetch('/api/url?id=' + s.id).then(r => r.json())
+    if(!r.ok){ toast(r.msg || '这首放不了'); loadingSong = false; return }
+    audio.pause()
+    audio.src = r.url
+    audio.load()
+    try{
+      await audio.play()
+      playing = true; setIcon(true)
+    }catch(err){
+      toast('点一下播放键开始吧')
+      playing = false; setIcon(false)
+    }
+  }catch(e){
+    toast('取播放地址失败了，再点一次')
+  }finally{
+    loadingSong = false
+  }
+}
+
+function markCurrent(){
+  document.querySelectorAll('.item').forEach((el,i) => el.classList.toggle('on', i === cur))
+}
+
+function setIcon(p){
+  $('#pIcon').innerHTML = p
+    ? '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'
+    : '<path d="M8 5v14l11-7z"/>'
+}
+
+function setProgress(ratio, ms){
+  const p = Math.max(0, Math.min(1, ratio || 0))
+  $('#fg').style.width = (p * 100) + '%'
+  $('#knob').style.left = (p * 100) + '%'
+  if(ms != null) $('#cur').textContent = fmt(ms)
+}
+
+// ---------- 事件 ----------
+$('#go').addEventListener('click', search)
+$('#kw').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); e.target.blur(); search() } })
+
+$('#play').addEventListener('click', () => {
+  if(!audio.src){ if(songs.length) play(cur < 0 ? 0 : cur); return }
+  if(audio.paused){ audio.play().catch(() => toast('播放被挡住了')); setIcon(true) }
+  else { audio.pause(); setIcon(false) }
+})
+$('#prev').addEventListener('click', () => play(cur > 0 ? cur - 1 : songs.length - 1))
+$('#next').addEventListener('click', () => play(cur < songs.length - 1 ? cur + 1 : 0))
+
+audio.addEventListener('timeupdate', () => {
+  if(audio.duration) setProgress(audio.currentTime / audio.duration, audio.currentTime * 1000)
+})
+audio.addEventListener('loadedmetadata', () => { $('#tot').textContent = fmt(audio.duration * 1000) })
+audio.addEventListener('play', () => { playing = true; setIcon(true) })
+audio.addEventListener('pause', () => { playing = false; setIcon(false) })
+audio.addEventListener('ended', () => { if(cur < songs.length - 1) play(cur + 1) })
+audio.addEventListener('error', () => { if(audio.src) toast('这首歌好像播不了') })
+
+$('#track').addEventListener('click', e => {
+  if(!audio.duration) return
+  const r = e.currentTarget.getBoundingClientRect()
+  const p = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))
+  audio.currentTime = p * audio.duration
+  setProgress(p, audio.currentTime * 1000)
+})
+</script>
+</body>
+</html>

@@ -221,6 +221,12 @@
 
 <script>
 const $ = s => document.querySelector(s)
+const API_BASE = (function () {
+  const h = location.hostname || ''
+  if (!h || h === 'localhost' || h === '127.0.0.1' || h.endsWith('tencentscf.com')) return ''
+  return 'https://1512583080-b5n0wu74e1.ap-guangzhou.tencentscf.com'
+})()
+
 const audio = $('#audio')
 let songs = [], cur = -1, playing = false, loadingSong = false
 const HOT = ['周杰伦','五月天','陈奕迅','坂本龙一','久石让','房东的猫']
@@ -252,7 +258,7 @@ async function search(){
   if(!kw){ toast('先输入歌名或歌手吧'); return }
   $('#area').innerHTML = '<div class="hint"><div class="spin"></div>正在找…</div>'
   try{
-    const r = await fetch('/api/search?kw=' + encodeURIComponent(kw) + '&limit=30').then(r => r.json())
+    const r = await fetch(API_BASE + '/api/search?kw=' + encodeURIComponent(kw) + '&limit=30').then(r => r.json())
     if(!r.ok){ $('#area').innerHTML = `<div class="hint"><span class="ic">☁</span>${r.msg || '没搜到'}</div>`; return }
     if(!r.songs.length){ $('#area').innerHTML = '<div class="hint"><span class="ic">☁</span>什么都没找到，换个词试试？</div>'; return }
     songs = r.songs
@@ -301,7 +307,7 @@ async function play(i){
   toast('正在准备…')
 
   try{
-    const r = await fetch('/api/url?id=' + s.id).then(r => r.json())
+    const r = await fetch(API_BASE + '/api/url?id=' + s.id).then(r => r.json())
     if(!r.ok){ toast(r.msg || '这首放不了'); loadingSong = false; return }
     audio.pause()
     audio.src = r.url
